@@ -1,1 +1,26 @@
-
+{
+  "source_unchanged": true,
+  "source_sha256": "9efc022b79b12c3671e7e119d3f36070bdde83caac18270299ee91b7263afc86",
+  "final_pptx_sha256": "e7084cb94b3284482a668584e0dbb68f37b6c4e21891b5d45efa6d30dd136736",
+  "final_pdf_sha256": "fa096cdce7d7c89377ac0a0a5223e3bcbbdff40e7385d799ea81776f42a5f981",
+  "slides": 30,
+  "storyboards": 19,
+  "descriptions": 128,
+  "callouts": 128,
+  "callout_diameter_inches": 0.2,
+  "actual_make_captures": 24,
+  "template_parts_byte_identical": 10,
+  "prohibited_text_findings": 0,
+  "deleted_ontology_orphan_image_removed": true,
+  "structural_findings": 0,
+  "layout_findings": 0,
+  "native_powerpoint_pdf_pages": 30,
+  "pdf_figma_links": [
+    "https://blob-silver-16955234.figma.site",
+    "https://www.figma.com/make/AlZOwKZXABo7G6BkUhTG03/Start-Task"
+  ],
+  "published_site_checks_pass": 12,
+  "diagram_final_alignment_verified": false,
+  "remaining": "Latest supplied Use Case Diagram still has four duplicate cases; its final consistency checkbox remains △",
+  "status": "pass_with_diagram_followup"
+}
