@@ -1,1 +1,11 @@
+.DS_Store
+.omx/
 
+# Obsidian device-local state and installed plugin files
+.obsidian/workspace*.json
+.obsidian/cache/
+.obsidian/plugins/
+.trash/
+
+# PowerPoint creates these temporary lock files while a deck is open
+~$*.pptx
