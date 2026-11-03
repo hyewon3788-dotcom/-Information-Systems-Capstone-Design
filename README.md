@@ -1,1 +1,63 @@
+# Information Systems Capstone Design
 
+2026년 2학기 정보시스템 캡스톤디자인 프로젝트 워크스페이스입니다.
+
+## 제출 문서
+
+- [프로젝트 정의서](00_제출/Red_PROJECT.md)
+- [유스케이스 다이어그램](00_제출/Red_USECASE.md)
+- [유스케이스 StarUML 편집 원본](00_제출/Red_USECASE.mdj)
+- [화면설계서 PDF 검토본 — 32쪽](00_제출/Red_SCREEN.pdf)
+- [화면설계서 원고·32개 Use Case 대응표](00_제출/Red_SCREEN.md)
+
+이승보의 팀 [Figma Design 파일](https://www.figma.com/design/3g5xR8OkcV6sUclyGM5d30)에 주요 화면 8개와 팝업·상태를 포함한 21개 프레임을 옮겼습니다. 연결 144개의 이동 대상을 확인했고, 실제 클릭 재생과 비로그인 열람 권한은 아직 검증하지 못했습니다. [요구사항별 확인 결과](06_증빙/화면설계/검증.md)에 검증 범위를 기록했습니다.
+
+## ERD
+
+- [ERD ERwin 파일 — Logical/Physical 모델](04_아키텍처/ERD/Red_ERD.erwin)
+- [ERD 수정 내역](04_아키텍처/ERD/ERD_수정_내역.md)
+- [ERD 수정 가이드 — 남은 작업과 팀 확인 질문](04_아키텍처/ERD/ERD_수정_가이드.md)
+- [ERD 프로토타입 대조 가이드 — 화면 시안과 다른 컬럼과 고칠 방법](04_아키텍처/ERD/ERD_프로토타입_대조_가이드.md)
+- [ERD Oracle SQL — ERwin Schema Generation 결과](04_아키텍처/ERD/Red_ERD_Oracle.sql)
+- [ERD 코드 설계서 — 코드값 컬럼 14개](04_아키텍처/ERD/ERD_코드_설계서.md)
+
+## 화면 시안
+
+- [클릭 가능한 제주 마케팅 캘린더](02_제품/화면시안/index.html)
+- [시안 실행 방법과 구현 범위](02_제품/화면시안/README.md)
+- [Figma Make 게시본 시안 — 실행 방법과 버전](02_제품/화면시안_Make/README.md)
+- [Figma Make 게시본 시안 공개 주소 (GitHub Pages)](https://lsb-afk.github.io/-Information-Systems-Capstone-Design/)
+- [검증 결과와 화면 캡처](06_증빙/화면시안/검증.md)
+- [화면설계 자료와 PDF 재생성 방법](02_제품/화면설계/README.md)
+- [Figma Make 활용 경로와 시작 프롬프트](02_제품/화면설계/FIGMA_MAKE.md)
+
+## 폴더 구조
+
+```text
+클로드/
+.omc/
+.st버전/
+00_제출/
+01_전략/
+02_제품/
+03_에이전트/
+04_아키텍처/
+05_리서치/
+06_증빙/
+07_원천/
+```
+
+## Obsidian · 로컬 · GitHub 연결
+
+이 저장소의 최상위 폴더가 Obsidian 보관함입니다. Obsidian에서 수정한 노트는 같은 로컬 파일에 저장됩니다.
+
+- GitHub 저장소: https://github.com/LSB-afk/-Information-Systems-Capstone-Design
+- 동기화 브랜치: `main` → `origin/main`
+- 현재 Mac의 Obsidian Git 플러그인: `2.39.0`
+- Obsidian이 열려 있는 동안 5분마다 변경 사항을 커밋하고 GitHub에 푸시합니다.
+- 보관함을 열 때와 5분마다 원격 변경 사항을 가져오며, 푸시 전에도 가져오기를 실행합니다.
+- 즉시 동기화하려면 명령어 팔레트(`⌘P`)에서 `Git: Commit-and-sync`를 실행합니다.
+
+앱을 닫으면 자동 동기화도 멈춥니다. 동기화 오류나 충돌이 표시되면 먼저 해결한 뒤 다시 동기화합니다.
+
+노트와 공통 Obsidian 설정은 Git으로 관리합니다. 화면 배치, 플러그인 설치 파일·기기별 설정, 휴지통, `.omx/`는 제외합니다. 다른 컴퓨터에서는 이 저장소를 복제한 폴더를 보관함으로 열고, Git 플러그인과 GitHub 인증을 별도로 설정해야 합니다.
