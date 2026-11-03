@@ -1,1 +1,63 @@
-
+const {chromium}=require(process.env.PLAYWRIGHT_MODULE||'playwright');
+const {test,before,after}=require('node:test');
+const assert=require('node:assert/strict');
+const base=process.env.PREVIEW_URL||'http://127.0.0.1:8766/';
+let browser;
+before(async()=>{browser=await chromium.launch({headless:true,executablePath:process.env.CHROME_PATH||'/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'});});
+after(async()=>{await browser?.close();});
+async function visit(view,run){const c=await browser.newContext({viewport:{width:1440,height:1080}});try{const p=await c.newPage();await p.goto(base+'#'+view);await run(p);}finally{await c.close();}}
+async function admin(p){await p.goto(base+'#login');await p.locator('[data-role=service]').click();await p.locator('[data-action=enter]').click();await p.goto(base+'#data');}
+test('Unavailable years show an empty state instead of retaining example statistics',()=>visit('analysis',async p=>{await p.locator('#analysis-year').selectOption('2024');assert.match(await p.locator('#analysis-empty').textContent(),/2024.*자료가 없습니다/s);assert.equal(await p.locator('.chart').count(),0);await p.locator('#analysis-year').selectOption('2025');await p.locator('[data-region-map="구좌읍"]').click();assert.match(await p.locator('.eyebrow').textContent(),/구좌읍/);await p.locator('[data-analysis-mode=consumption]').click();assert.match(await p.locator('#consumption-comparison').textContent(),/내국인.*외국인/s);assert.match(await p.locator('#timeband-table').textContent(),/월별.*예시/s);}));
+test('All proposal categories and source conditions are shown inline',()=>visit('recommendations',async p=>{const text=await p.locator('.recommendation').first().textContent();for(const token of ['홍보 시기','홍보 대상','상품 후보','주변 관광지','판단 이유','집계 기준'])assert(text.includes(token),token);}));
+test('New record fields distinguish missing results from zero after save and reload',()=>visit('records',async p=>{await p.locator('[data-record="sample-oct"]').click();await p.locator('#record-minutes').fill('35');await p.locator('#record-adopted').selectOption('yes');await p.locator('#record-activity').fill('계절 음료 사진을 게시함');await p.locator('#record-clicks').fill('0');await p.locator('#record-form button[type=submit]').click();await p.reload();await p.locator('[data-record="sample-oct"]').click();assert.equal(await p.locator('#record-minutes').inputValue(),'35');assert.equal(await p.locator('#record-adopted').inputValue(),'yes');assert.equal(await p.locator('#record-coupons').inputValue(),'');assert.equal(await p.locator('#record-clicks').inputValue(),'0');await p.keyboard.press('Escape');await p.locator('[data-action=report]').click();const summary=await p.locator('#dialog').textContent();assert.match(summary,/사용 결과 요약/);assert.match(summary,/35분/);assert.match(summary,/계절 음료 사진을 게시함/);assert.match(summary,/미확보/);}));
+test('Older saved records gain empty new fields and remain usable',()=>visit('records',async p=>{await p.evaluate(()=>{const s=JSON.parse(localStorage.getItem('jeju-design-prototype-v1')||'{}');s.records={'sample-oct':{status:'실행함',date:'2026-10-05',clicks:0,bookings:null,note:'이전 기록'}};localStorage.setItem('jeju-design-prototype-v1',JSON.stringify(s));});await p.reload();await p.locator('[data-record="sample-oct"]').click();assert.equal(await p.locator('#record-clicks').inputValue(),'0');assert.equal(await p.locator('#record-minutes').inputValue(),'');assert.equal(await p.locator('#record-adopted').inputValue(),'unknown');assert.equal(await p.locator('#record-coupons').inputValue(),'');}));
+test('CSV five validations block missing values, allow good examples, and invalidate edited metadata',()=>visit('data',async p=>{await admin(p);await p.locator('[data-action=csv-sample-invalid]').click();assert.equal(await p.locator('#csv-validation li').count(),5);assert(await p.locator('[data-action=csv-register]').isDisabled());await p.locator('[data-action=csv-sample]').click();assert.equal(await p.locator('#csv-validation [data-result=pass]').count(),5);assert(!(await p.locator('[data-action=csv-register]').isDisabled()));await p.locator('#csv-provider').fill('다른 제공자');assert(await p.locator('[data-action=csv-register]').isDisabled());await p.locator('[data-action=validate]').click();assert.match(await p.locator('#csv-validation').textContent(),/제공 기준.*불일치/s);await p.locator('[data-action=csv-sample]').click();await p.locator('[data-action=csv-register]').click();assert.match(await p.locator('#csv-status').textContent(),/브라우저.*등록/s);}));
+test('Local CSV file selection is validated without server upload',()=>visit('data',async p=>{await admin(p);await p.locator('#csv-file').setInputFiles({name:'example.csv',mimeType:'text/csv',buffer:Buffer.from('region_code,month,value,unit,provider,aggregation\n50110253,2025-10,51,만 명,화면 시안 제작팀,월별 지역 집계\n50110256,2025-10,39,만 명,화면 시안 제작팀,월별 지역 집계')});await p.locator('[data-action=validate]').click();assert.equal(await p.locator('#csv-validation [data-result=pass]').count(),5);}));
+test('Recommendation rules and evidence persist only in the browser',()=>visit('data',async p=>{await admin(p);await p.locator('[data-action=criteria]').click();await p.locator('#criteria-threshold').fill('20');await p.locator('#criteria-reason').fill('직전 월 대비 방문 감소와 휴무일을 함께 확인');await p.locator('#criteria-form button[type=submit]').click();await p.reload();await p.locator('[data-action=criteria]').click();assert.equal(await p.locator('#criteria-threshold').inputValue(),'20');assert.equal(await p.locator('#criteria-reason').inputValue(),'직전 월 대비 방문 감소와 휴무일을 함께 확인');assert.match(await p.locator('#dialog').textContent(),/고정 예시.*추천 엔진/s);}));
+test('Failed plan saves preserve inputs for retry and do not count as a completed plan',()=>visit('calendar',async p=>{await p.locator('[data-action=new-plan]').click();await p.locator('#plan-title').fill('저장 실패 후 다시 저장');await p.evaluate(()=>{window.restoreStorage=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('blocked','QuotaExceededError');};});await p.locator('#plan-form button[type=submit]').click();assert(await p.locator('#dialog').evaluate(el=>el.open));assert.match(await p.locator('#plan-error').textContent(),/저장에 실패/);assert.equal(await p.locator('#plan-title').inputValue(),'저장 실패 후 다시 저장');await p.evaluate(()=>{Storage.prototype.setItem=window.restoreStorage;});await p.locator('#plan-form button[type=submit]').click();assert.equal(await p.getByRole('heading',{name:'저장 실패 후 다시 저장',exact:true}).count(),1);await p.reload();assert.equal(await p.getByRole('heading',{name:'저장 실패 후 다시 저장',exact:true}).count(),1);}));
+test('Failed record saves retain inputs, and optional AI remains unavailable',()=>visit('records',async p=>{assert(await p.getByRole('button',{name:'보고서 초안 · UC06-2',exact:true}).isDisabled());await p.locator('[data-record=sample-oct]').click();await p.locator('#record-activity').fill('저장 재시도 활동');await p.evaluate(()=>{window.restoreStorage=Storage.prototype.setItem;Storage.prototype.setItem=function(){throw new DOMException('blocked','QuotaExceededError');};});await p.locator('#record-form button[type=submit]').click();assert(await p.locator('#dialog').evaluate(el=>el.open));assert.match(await p.locator('#record-error').textContent(),/저장에 실패/);assert.equal(await p.locator('#record-activity').inputValue(),'저장 재시도 활동');await p.evaluate(()=>{Storage.prototype.setItem=window.restoreStorage;});await p.locator('#record-form button[type=submit]').click();await p.reload();await p.locator('[data-record=sample-oct]').click();assert.equal(await p.locator('#record-activity').inputValue(),'저장 재시도 활동');await p.keyboard.press('Escape');await p.goto(base+'#recommendations');assert(await p.getByRole('button',{name:'추천 이유 설명 초안 · UC06-1',exact:true}).isDisabled());}));
+test('Cancelling recommendation criteria leaves saved and displayed values unchanged',()=>visit('data',async p=>{
+  await admin(p);
+  const saved=await p.evaluate(()=>localStorage.getItem('jeju-design-admin-v1'));
+  await p.locator('[data-action=criteria]').click();
+  const reason=await p.locator('#criteria-reason').inputValue();
+  await p.locator('#criteria-reason').fill('취소했으므로 저장되면 안 되는 변경');
+  await p.locator('#criteria-form [data-action=close-dialog]').click();
+  assert.equal(await p.locator('#dialog').evaluate(el=>el.open),false);
+  assert.equal(await p.evaluate(()=>localStorage.getItem('jeju-design-admin-v1')),saved);
+  await p.locator('[data-action=criteria]').click();
+  assert.equal(await p.locator('#criteria-reason').inputValue(),reason);
+}));
+test('Stale CSV reads cannot replace a newer file, example or screen',()=>visit('data',async p=>{
+  await admin(p);
+  const errors=[];p.on('pageerror',error=>errors.push(error.message));
+  await p.evaluate(()=>{
+    const original=File.prototype.text,pending=[];
+    File.prototype.text=function(){return this.name.startsWith('delayed-')?new Promise(resolve=>pending.push({file:this,resolve})):original.call(this);};
+    window.releaseCSVRead=async()=>{const {file,resolve}=pending.shift();resolve(await original.call(file));await new Promise(requestAnimationFrame);};
+  });
+  const header='region_code,month,value,unit,provider,aggregation\n';
+  const valid=Buffer.from(header+'50110253,2025-10,51,만 명,화면 시안 제작팀,월별 지역 집계');
+  const invalid=Buffer.from(header+'50110256,2025-10,,만 명,화면 시안 제작팀,월별 지역 집계');
+  const select=(name,buffer=valid)=>p.locator('#csv-file').setInputFiles({name,mimeType:'text/csv',buffer});
+  await select('delayed-first.csv');await select('current-invalid.csv',invalid);
+  await p.waitForFunction(()=>document.querySelector('#csv-status').textContent.includes('current-invalid.csv'));
+  await p.evaluate(()=>window.releaseCSVRead());
+  await p.locator('[data-action=validate]').click();
+  assert.match(await p.locator('#csv-status').textContent(),/current-invalid\.csv/);
+  assert(await p.locator('[data-action=csv-register]').isDisabled());
+  assert.equal(await p.locator('#csv-validation [data-result=pass]').count(),4);
+  await select('delayed-example.csv');await p.locator('[data-action=csv-sample-invalid]').click();
+  await p.evaluate(()=>window.releaseCSVRead());
+  assert.match(await p.locator('#csv-status').textContent(),/누락값 포함 예시\.csv/);
+  assert(await p.locator('[data-action=csv-register]').isDisabled());
+  assert(!(await p.locator('[data-action=validate]').isDisabled()));
+  await select('delayed-navigation.csv');
+  await p.locator('.sidebar .nav-link[href="#overview"]').click();await p.waitForURL('**/#overview');
+  await p.evaluate(()=>window.releaseCSVRead());
+  assert.deepEqual(errors,[]);
+  await p.locator('.sidebar a[href="#data"]').click();await p.waitForURL('**/#data');
+  await p.locator('[data-action=validate]').click();
+  assert.match(await p.locator('#csv-status').textContent(),/먼저 CSV 파일 또는 예시를 선택/);
+  assert(await p.locator('[data-action=csv-register]').isDisabled());
+}));
